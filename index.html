@@ -3,9 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>롯데 선수 추천 맛집 탐색</title>
+  <title>자이언츠 맛집 지도</title>
 
   <style>
+    /* 롯데 자이언츠 색상을 변수로 저장 (여기만 바꾸면 전체 색이 바뀜) */
+    :root {
+      --navy: #041e42;
+      --red: #d00f31;
+      --light-navy: #f1f4f9;
+      --line: #e3e7ee;
+    }
+
     /* 기본 여백 제거 및 화면 전체 사용 */
     * {
       margin: 0;
@@ -25,10 +33,12 @@
     }
 
     .sidebar {
-      width: 320px;
+      width: 340px;
       display: flex;
       flex-direction: column;
-      border-right: 1px solid #ddd;
+      background-color: white;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+      z-index: 5;
     }
 
     .map-area {
@@ -39,6 +49,35 @@
     #map {
       width: 100%;
       height: 100%;
+    }
+
+    /* 맨 위 제목 영역: 네이비 배경 + 빨간 줄 */
+    .header {
+      background-color: var(--navy);
+      color: white;
+      padding: 16px 16px 14px;
+      border-bottom: 4px solid var(--red);
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .header-title span {
+      color: var(--red);
+      background-color: white;
+      padding: 0 6px;
+      border-radius: 3px;
+      margin-right: 6px;
+      font-style: italic;
+    }
+
+    .header-sub {
+      font-size: 12px;
+      margin-top: 4px;
+      color: #b9c4d6;
     }
 
     /* 로드뷰는 지도 위에 겹쳐서 보여주고, 평소에는 숨김 */
@@ -58,18 +97,20 @@
       right: 12px;
       z-index: 11;
       display: none;
-      padding: 8px 14px;
-      background-color: #041e42;
+      padding: 9px 16px;
+      background-color: var(--red);
       color: white;
-      border: none;
-      border-radius: 4px;
+      border: 2px solid white;
+      border-radius: 20px;
       cursor: pointer;
       font-size: 14px;
+      font-weight: bold;
     }
 
     /* 탭 버튼 */
     .tab-menu {
       display: flex;
+      background-color: var(--light-navy);
     }
 
     .tab-button {
@@ -77,17 +118,17 @@
       padding: 12px 4px;
       border: none;
       border-bottom: 3px solid transparent;
-      background-color: #f5f5f5;
+      background-color: transparent;
       cursor: pointer;
       font-size: 14px;
       font-weight: bold;
-      color: #666;
+      color: #7a869a;
     }
 
     .tab-button.active {
       background-color: white;
-      color: #041e42;
-      border-bottom: 3px solid #d00f31;
+      color: var(--navy);
+      border-bottom: 3px solid var(--red);
     }
 
     /* 검색창 (탭 2에서만 보임) */
@@ -95,7 +136,7 @@
       display: none;
       padding: 12px;
       gap: 6px;
-      border-bottom: 1px solid #ddd;
+      border-bottom: 1px solid var(--line);
     }
 
     .search-box.visible {
@@ -104,13 +145,70 @@
 
     .search-box input {
       flex: 1;
-      padding: 8px;
+      padding: 9px;
       font-size: 14px;
+      border: 2px solid var(--navy);
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .search-box input:focus {
+      border-color: var(--red);
     }
 
     .search-box button {
-      padding: 8px 12px;
+      padding: 9px 14px;
       cursor: pointer;
+      background-color: var(--red);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+
+    /* 추천 선수 버튼 모음 (탭 2에서만 보임) */
+    .player-chips {
+      display: none;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background-color: var(--light-navy);
+    }
+
+    .player-chips.visible {
+      display: block;
+    }
+
+    .chips-title {
+      font-size: 12px;
+      color: #6b778c;
+      margin-bottom: 6px;
+    }
+
+    .chip-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      padding: 5px 11px;
+      border: 1.5px solid var(--navy);
+      border-radius: 14px;
+      background-color: white;
+      color: var(--navy);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .chip:hover {
+      background-color: #e4eaf5;
+    }
+
+    .chip.active {
+      background-color: var(--red);
+      border-color: var(--red);
+      color: white;
+      font-weight: bold;
     }
 
     /* 검색 결과 리스트 */
@@ -121,25 +219,45 @@
     }
 
     #resultList li {
-      padding: 12px;
-      border-bottom: 1px solid #eee;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      border-left: 5px solid transparent;
       cursor: pointer;
     }
 
     #resultList li:hover {
-      background-color: #f3f6ff;
+      background-color: var(--light-navy);
+      border-left-color: var(--red);
+    }
+
+    /* 결과 개수 안내 줄 (클릭해도 반응 없음) */
+    #resultList li.result-count {
+      background-color: var(--navy);
+      color: white;
+      font-size: 13px;
+      padding: 8px 14px;
+      cursor: default;
+      border-left-color: var(--red);
+    }
+
+    #resultList li.result-count:hover {
+      background-color: var(--navy);
     }
 
     .place-name {
       font-weight: bold;
+      color: var(--navy);
       margin-bottom: 4px;
     }
 
     .place-player {
-      font-size: 13px;
-      color: #d00f31;
-      font-weight: bold;
-      margin-bottom: 2px;
+      display: inline-block;
+      font-size: 12px;
+      color: white;
+      background-color: var(--red);
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-bottom: 4px;
     }
 
     .place-address {
@@ -153,55 +271,109 @@
       margin-top: 2px;
     }
 
-    .message {
-      padding: 12px;
+    #resultList li.message {
       color: #888;
       font-size: 14px;
       cursor: default;
     }
 
-    /* 마커 팝업(인포윈도우) 안쪽 스타일 */
-    .info-content {
-      padding: 8px 10px;
+    #resultList li.message:hover {
+      background-color: white;
+      border-left-color: transparent;
+    }
+
+    /* 마커를 눌렀을 때 뜨는 팝업 카드 */
+    .popup-card {
+      position: relative;
+      min-width: 210px;
+      background-color: white;
+      border: 3px solid var(--navy);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
       font-size: 13px;
-      min-width: 190px;
+      font-family: "Malgun Gothic", sans-serif;
     }
 
-    .info-name {
+    .popup-top {
+      background-color: var(--navy);
+      color: white;
+      padding: 8px 30px 8px 12px;
       font-weight: bold;
-      margin-bottom: 4px;
+      font-size: 14px;
+      border-bottom: 3px solid var(--red);
     }
 
-    .info-player {
-      color: #d00f31;
+    .popup-close {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .popup-body {
+      padding: 10px 12px;
+    }
+
+    .popup-player {
+      display: inline-block;
+      color: white;
+      background-color: var(--red);
+      padding: 2px 9px;
+      border-radius: 10px;
       font-weight: bold;
-      margin-bottom: 4px;
-    }
-
-    .info-address {
-      color: #555;
       margin-bottom: 6px;
     }
 
+    .popup-address {
+      color: #555;
+      margin-bottom: 8px;
+    }
+
     .roadview-button {
-      padding: 4px 8px;
-      font-size: 12px;
+      width: 100%;
+      padding: 6px;
+      background-color: var(--navy);
+      color: white;
+      border: none;
+      border-radius: 5px;
       cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .roadview-button:hover {
+      background-color: var(--red);
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- 왼쪽: 탭 + 검색창 + 결과 리스트 -->
+    <!-- 왼쪽: 제목 + 탭 + 검색창 + 선수 버튼 + 결과 리스트 -->
     <div class="sidebar">
+      <div class="header">
+        <div class="header-title"><span>GIANTS</span>맛집 지도</div>
+        <div class="header-sub">⚾ 롯데 선수들이 추천하는 부산 맛집</div>
+      </div>
+
       <div class="tab-menu">
         <button class="tab-button active" id="tabFood">롯데 선수 추천 음식점</button>
         <button class="tab-button" id="tabPlayer">선수명으로 검색</button>
       </div>
 
       <div class="search-box" id="searchBox">
-        <input type="text" id="keywordInput" placeholder="선수 이름을 입력하세요 (예: 최준용)">
+        <input type="text" id="keywordInput" placeholder="선수 이름 (예: 최준용)">
         <button id="searchButton">검색</button>
+      </div>
+
+      <!-- 맛집을 추천한 선수 목록 (자바스크립트가 버튼을 만들어 넣어줌) -->
+      <div class="player-chips" id="playerChips">
+        <div class="chips-title" id="chipsTitle"></div>
+        <div class="chip-wrap" id="chipWrap"></div>
       </div>
 
       <ul id="resultList">
@@ -239,13 +411,28 @@
       { name: "경주국밥", address: "부산 동래구 사직동 78-42", player: "김진욱" }
     ];
 
+    // 마커 모양 만들기: 빨간 핀 + 야구공 무늬 (선택되면 네이비로 바뀜)
+    function makePinSvg(fillColor) {
+      const svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='36' height='44' viewBox='0 0 36 44'>" +
+        "<path d='M18 43C18 43 3 27 3 16A15 15 0 0 1 33 16C33 27 18 43 18 43Z' " +
+        "fill='" + fillColor + "' stroke='white' stroke-width='2.5'/>" +
+        "<circle cx='18' cy='16' r='9' fill='white'/>" +
+        "<path d='M12.5 9.5Q16 16 12.5 22.5M23.5 9.5Q20 16 23.5 22.5' " +
+        "fill='none' stroke='#d00f31' stroke-width='1.6'/></svg>";
+      return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+    }
+
     // 지도, 검색 객체, 로드뷰 객체 등을 저장할 변수
     let map;
     let geocoder;
     let placesService;
     let roadview;
     let roadviewClient;
-    let infowindow;
+    let popupOverlay;           // 마커를 눌렀을 때 뜨는 팝업
+    let normalMarkerImage;      // 평소 마커 모양 (빨강)
+    let selectedMarkerImage;    // 선택된 마커 모양 (네이비)
+    let selectedMarker = null;  // 지금 선택된 마커
     let currentPosition = null; // 내 위치 (못 가져오면 null)
     let markerList = [];        // 지도에 표시된 마커 목록
 
@@ -260,12 +447,30 @@
         level: 5
       });
 
-      // 주소 변환, 장소 검색, 로드뷰, 팝업 객체 생성
+      // 주소 변환, 장소 검색, 로드뷰 객체 생성
       geocoder = new kakao.maps.services.Geocoder();
       placesService = new kakao.maps.services.Places();
       roadview = new kakao.maps.Roadview(document.getElementById("roadview"));
       roadviewClient = new kakao.maps.RoadviewClient();
-      infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
+
+      // 팝업 객체 생성 (내용은 마커를 누를 때 채워짐)
+      popupOverlay = new kakao.maps.CustomOverlay({
+        yAnchor: 1.25,
+        zIndex: 3,
+        clickable: true
+      });
+
+      // 마커 이미지 만들기 (크기 36x44, 핀 끝부분이 좌표에 오도록 기준점 지정)
+      const markerSize = new kakao.maps.Size(36, 44);
+      const markerOption = { offset: new kakao.maps.Point(18, 44) };
+      normalMarkerImage = new kakao.maps.MarkerImage(makePinSvg("#d00f31"), markerSize, markerOption);
+      selectedMarkerImage = new kakao.maps.MarkerImage(makePinSvg("#041e42"), markerSize, markerOption);
+
+      // 지도의 빈 곳을 누르면 팝업 닫기
+      kakao.maps.event.addListener(map, "click", closePopup);
+
+      // 추천 선수 버튼 만들기
+      createPlayerChips();
 
       // 이벤트 연결
       document.getElementById("tabFood").addEventListener("click", function () {
@@ -289,6 +494,57 @@
         });
       });
     });
+
+    // 맛집을 추천한 선수 이름 목록 만들기 (중복 없이, 추천 가게 수 포함)
+    function getPlayerSummary() {
+      const countByPlayer = {};
+
+      restaurantList.forEach(function (restaurant) {
+        if (countByPlayer[restaurant.player]) {
+          countByPlayer[restaurant.player]++;
+        } else {
+          countByPlayer[restaurant.player] = 1;
+        }
+      });
+
+      // [{ name: "최준용", count: 2 }, ...] 모양으로 바꾸고 가나다순 정렬
+      return Object.keys(countByPlayer)
+        .sort()
+        .map(function (playerName) {
+          return { name: playerName, count: countByPlayer[playerName] };
+        });
+    }
+
+    // 추천 선수 버튼 만들기
+    function createPlayerChips() {
+      const playerSummary = getPlayerSummary();
+      const chipWrap = document.getElementById("chipWrap");
+
+      document.getElementById("chipsTitle").textContent =
+        "맛집을 추천한 선수 " + playerSummary.length + "명 (누르면 바로 검색)";
+
+      playerSummary.forEach(function (player) {
+        const chip = document.createElement("button");
+        chip.className = "chip";
+        chip.dataset.player = player.name; // 어떤 선수 버튼인지 기억해 두기
+        chip.textContent = player.name + " (" + player.count + ")";
+
+        // 버튼을 누르면 검색창에 이름을 넣고 바로 검색
+        chip.addEventListener("click", function () {
+          document.getElementById("keywordInput").value = player.name;
+          searchByPlayerName();
+        });
+
+        chipWrap.appendChild(chip);
+      });
+    }
+
+    // 지금 검색한 선수의 버튼만 빨갛게 표시하기
+    function highlightChip(keyword) {
+      document.querySelectorAll(".chip").forEach(function (chip) {
+        chip.classList.toggle("active", chip.dataset.player === keyword);
+      });
+    }
 
     // 내 위치 가져오기 (성공이든 실패든 끝나면 callback 실행)
     function getCurrentPosition(callback) {
@@ -352,8 +608,9 @@
       document.getElementById("tabFood").classList.toggle("active", tabName === "food");
       document.getElementById("tabPlayer").classList.toggle("active", tabName === "player");
 
-      // 검색창은 탭 2에서만 보이기
+      // 검색창과 선수 버튼은 탭 2에서만 보이기
       document.getElementById("searchBox").classList.toggle("visible", tabName === "player");
+      document.getElementById("playerChips").classList.toggle("visible", tabName === "player");
 
       // 기존 결과 지우기
       clearResults();
@@ -365,7 +622,8 @@
         // 탭 2: 입력된 선수 이름이 있으면 바로 검색
         const keyword = document.getElementById("keywordInput").value.trim();
         if (keyword === "") {
-          showMessage("선수 이름을 입력하고 검색해 주세요.");
+          highlightChip("");
+          showMessage("선수 이름을 입력하거나 위의 선수 버튼을 눌러 보세요.");
         } else {
           searchByPlayerName();
         }
@@ -387,6 +645,7 @@
       });
 
       clearResults();
+      highlightChip(keyword);
 
       if (filteredList.length === 0) {
         showMessage("'" + keyword + "' 선수의 추천 맛집이 없어요.");
@@ -410,16 +669,23 @@
         });
       }
 
+      // 맨 위에 결과 개수 줄 넣기
+      const countItem = document.createElement("li");
+      countItem.className = "result-count";
+      resultList.appendChild(countItem);
+
       sortedList.forEach(function (restaurant) {
         // 좌표를 못 찾은 가게는 건너뛰기
         if (!restaurant.position) {
           return;
         }
 
-        // 마커 만들기
+        // 마커 만들기 (야구공 핀 모양)
         const marker = new kakao.maps.Marker({
           map: map,
-          position: restaurant.position
+          position: restaurant.position,
+          image: normalMarkerImage,
+          title: restaurant.name
         });
         markerList.push(marker);
         bounds.extend(restaurant.position);
@@ -434,7 +700,7 @@
 
         const playerDiv = document.createElement("div");
         playerDiv.className = "place-player";
-        playerDiv.textContent = "추천: " + restaurant.player;
+        playerDiv.textContent = "⚾ " + restaurant.player;
 
         const addressDiv = document.createElement("div");
         addressDiv.className = "place-address";
@@ -456,13 +722,13 @@
 
         // 마커를 누르면 팝업 표시
         kakao.maps.event.addListener(marker, "click", function () {
-          showInfoWindow(marker, restaurant);
+          showPopup(marker, restaurant);
         });
 
         // 리스트를 눌러도 같은 팝업 표시
         listItem.addEventListener("click", function () {
           map.setCenter(restaurant.position);
-          showInfoWindow(marker, restaurant);
+          showPopup(marker, restaurant);
         });
       });
 
@@ -470,6 +736,8 @@
         showMessage("표시할 수 있는 맛집이 없어요.");
         return;
       }
+
+      countItem.textContent = "⚾ 총 " + shownCount + "곳";
 
       // 표시된 맛집이 모두 보이도록 지도 범위 조정
       map.setBounds(bounds);
@@ -491,21 +759,36 @@
       return (meter / 1000).toFixed(1) + "km";
     }
 
-    // 팝업(인포윈도우): 가게 이름, 추천 선수, 주소, 로드뷰 버튼
-    function showInfoWindow(marker, restaurant) {
-      const content = document.createElement("div");
-      content.className = "info-content";
+    // 팝업 카드: 가게 이름, 추천 선수, 주소, 로드뷰 버튼
+    function showPopup(marker, restaurant) {
+      // 이전에 선택했던 마커는 원래 빨간색으로 되돌리기
+      if (selectedMarker) {
+        selectedMarker.setImage(normalMarkerImage);
+      }
+      selectedMarker = marker;
+      marker.setImage(selectedMarkerImage);
 
-      const nameDiv = document.createElement("div");
-      nameDiv.className = "info-name";
-      nameDiv.textContent = restaurant.name;
+      const card = document.createElement("div");
+      card.className = "popup-card";
+
+      const topDiv = document.createElement("div");
+      topDiv.className = "popup-top";
+      topDiv.textContent = restaurant.name;
+
+      const closeButton = document.createElement("button");
+      closeButton.className = "popup-close";
+      closeButton.textContent = "✕";
+      closeButton.addEventListener("click", closePopup);
+
+      const bodyDiv = document.createElement("div");
+      bodyDiv.className = "popup-body";
 
       const playerDiv = document.createElement("div");
-      playerDiv.className = "info-player";
-      playerDiv.textContent = "추천: " + restaurant.player;
+      playerDiv.className = "popup-player";
+      playerDiv.textContent = "⚾ " + restaurant.player + " 추천";
 
       const addressDiv = document.createElement("div");
-      addressDiv.className = "info-address";
+      addressDiv.className = "popup-address";
       addressDiv.textContent = restaurant.address;
 
       const roadviewButton = document.createElement("button");
@@ -515,13 +798,27 @@
         openRoadview(marker.getPosition());
       });
 
-      content.appendChild(nameDiv);
-      content.appendChild(playerDiv);
-      content.appendChild(addressDiv);
-      content.appendChild(roadviewButton);
+      bodyDiv.appendChild(playerDiv);
+      bodyDiv.appendChild(addressDiv);
+      bodyDiv.appendChild(roadviewButton);
 
-      infowindow.setContent(content);
-      infowindow.open(map, marker);
+      card.appendChild(topDiv);
+      card.appendChild(closeButton);
+      card.appendChild(bodyDiv);
+
+      popupOverlay.setContent(card);
+      popupOverlay.setPosition(marker.getPosition());
+      popupOverlay.setMap(map);
+    }
+
+    // 팝업 닫고 마커를 원래 색으로 되돌리기
+    function closePopup() {
+      popupOverlay.setMap(null);
+
+      if (selectedMarker) {
+        selectedMarker.setImage(normalMarkerImage);
+        selectedMarker = null;
+      }
     }
 
     // 로드뷰 열기: 선택한 위치에서 가장 가까운 로드뷰 찾기
@@ -554,7 +851,7 @@
       });
       markerList = [];
 
-      infowindow.close();
+      closePopup();
       closeRoadview();
       document.getElementById("resultList").innerHTML = "";
     }
